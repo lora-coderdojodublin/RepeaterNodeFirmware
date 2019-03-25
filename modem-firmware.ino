@@ -10,12 +10,12 @@
 #define SS      18   // GPIO18 -- SX1278's CS
 #define RST     14   // GPIO14 -- SX1278's RESET
 #define DI0     26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
-#define BAND    433005E3
+#define BAND    43305E3
 
 SSD1306 display(0x3c, 4, 15);
 
 //packet. sender destination message message_id
-
+char const SEPARATOR ='~';
 String localAddress = "EICDHZB";
 String Messages[250][2];
 int current_msg = 0;
@@ -53,7 +53,7 @@ void setup() {
   display.init();
   display.flipScreenVertically();  
   display.setFont(ArialMT_Plain_10);
-  display.drawStringMaxWidth(0, 15, 128,  "INIT OK WAITING FOR FIRST PACKET");
+  display.drawStringMaxWidth(0, 15, 128,  "INIT OK MODEM");
   display.display();
   delay(1500);
 
@@ -73,10 +73,11 @@ void loop() {
     int mess_id;
     int will_send = 0;
     int will_repeat = 0;
-    while (LoRa.parsePacket() > 0){
+    if (LoRa.parsePacket() > 0){
+      while (LoRa.available()) {
       Serial.println(sender);
       byte char_read = LoRa.read();
-      if (char_read != '~')
+      if (char_read != SEPARATOR)
         string_read += char_read;
       else{
         if(obj==0)
@@ -93,7 +94,8 @@ void loop() {
         obj++;
       }
       will_repeat=1;   
-  }
+      }
+    }
 
   if(will_repeat==1){
     for (int i=0; i<250;i++){
@@ -117,8 +119,9 @@ void loop() {
       LoRa.print(destination);
       LoRa.print(message);
       LoRa.print(mess_id);
-      repeaters = repeaters + "~" + localAddress;
+      repeaters = repeaters + SEPARATOR + localAddress;
       LoRa.print(repeaters);
+      LoRa.endPacket();
       current_msg=0;
     }
   }
@@ -127,7 +130,15 @@ void loop() {
     if (Serial.available() >0) {
       char c = Serial.read();  //gets one byte from serial buffer
       Message_to_send += c;
+      current_msg=2;
     } 
   }
+  if(current_msg==2){
+  Serial.println(Message_to_send);
+  LoRa.beginPacket();
   LoRa.print(Message_to_send);
+  LoRa.endPacket();
+  String Message_to_send = "";
+  current_msg=0;
+  }
 }
