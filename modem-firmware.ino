@@ -10,7 +10,7 @@
 #define SS      18   // GPIO18 -- SX1278's CS
 #define RST     14   // GPIO14 -- SX1278's RESET
 #define DI0     26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
-#define BAND    43305E3
+#define BAND    433E6
 
 SSD1306 display(0x3c, 4, 15);
 
@@ -25,7 +25,7 @@ String sender;
 String destination;
 String repeaters;
 String message = "";
-String Message_to_send = "";
+String Message_to_send = "~";
 void setup() {
   //start OLED
   pinMode(16,OUTPUT);
@@ -53,7 +53,7 @@ void setup() {
   display.init();
   display.flipScreenVertically();  
   display.setFont(ArialMT_Plain_10);
-  display.drawStringMaxWidth(0, 15, 128,  "INIT OK MODEM");
+  display.drawStringMaxWidth(0, 15, 128,  "INIT OK MODEM SLAB_USBtoUART");
   display.display();
   delay(1500);
 
@@ -73,6 +73,7 @@ void loop() {
     int mess_id;
     int will_send = 0;
     int will_repeat = 0;
+    
     if (LoRa.parsePacket() > 0){
       while (LoRa.available()) {
       Serial.println(sender);
@@ -115,6 +116,7 @@ void loop() {
     }
     
     if(current_msg==1){
+      LoRa.beginPacket();
       LoRa.print(sender);
       LoRa.print(destination);
       LoRa.print(message);
@@ -131,14 +133,21 @@ void loop() {
       char c = Serial.read();  //gets one byte from serial buffer
       Message_to_send += c;
       current_msg=2;
+      //Serial.println(Message_to_send);
     } 
   }
   if(current_msg==2){
   Serial.println(Message_to_send);
   LoRa.beginPacket();
-  LoRa.print(Message_to_send);
+  LoRa.print(String(Message_to_send));
+  //Serial.println("here msg");
+  //LoRa.print("1");
+  //Serial.println("here1");
   LoRa.endPacket();
-  String Message_to_send = "";
+  //Serial.println("here");
+  Message_to_send = "";
+  //Serial.println("here2");
   current_msg=0;
+  
   }
 }
