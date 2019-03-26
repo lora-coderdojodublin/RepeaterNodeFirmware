@@ -10,7 +10,7 @@
 #define SS      18   // GPIO18 -- SX1278's CS
 #define RST     14   // GPIO14 -- SX1278's RESET
 #define DI0     26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
-#define BAND    43305E3
+#define BAND    433E6
 
 SSD1306 display(0x3c, 4, 15);
 
@@ -50,12 +50,12 @@ void setup() {
     }
   }
   Serial.println("init ok");
-  display.init();
-  display.flipScreenVertically();  
-  display.setFont(ArialMT_Plain_10);
-  display.drawStringMaxWidth(0, 15, 128,  "INIT OK WAITING FOR FIRST PACKET");
-  display.display();
-  delay(1500);
+  //display.init();
+  //display.flipScreenVertically();  
+  //display.setFont(ArialMT_Plain_10);
+  //display.drawStringMaxWidth(0, 15, 128,  "INIT OK WAITING FOR FIRST PACKET");
+  //display.display();
+  //delay(1500);
 
 }
 
@@ -72,17 +72,20 @@ void loop() {
     String string_read = "";
     int mess_id;
     int will_send = 0;
+    //Serial.println(LoRa.parsePacket());
     if (LoRa.parsePacket() > 0){
+      Serial.println("here");
       while (LoRa.available()) {
-        Serial.println(sender);
-        byte char_read = LoRa.read();
+        //Serial.println(sender);
+        char char_read = (char)LoRa.read();
         if (char_read != SEPARATOR)
           string_read += char_read;
         else{
           if(obj==0)
             sender=string_read;
+            Serial.println(sender);
           if(obj==1)
-            destination=string_read;
+            destination=String(string_read);
           if(obj==2)
             message=string_read;
           if(obj==3)
@@ -100,18 +103,23 @@ void loop() {
       will_send=0;
     }else{
       will_send = 1;
-      Messages[current_msg][0] = sender;
-      Messages[current_msg][1] = mess_id;
-      if(current_msg != 249)
-        current_msg++;
-      else
-        current_msg = 0;
+      
       
       
     }
   }
+  Serial.println("here");
+      
   
   if(current_msg==1){
+    Messages[current_msg][0] = sender;
+      Messages[current_msg][1] = mess_id;
+      if(current_msg != 249){
+        current_msg++;
+        Serial.println(current_msg);
+      }
+      else
+        current_msg = 0;
     LoRa.beginPacket();
     LoRa.print(sender);
     LoRa.print(destination);
